@@ -1,0 +1,6 @@
+Forge Adventure Coop Windows
+Base Forge: 2.0.13-SNAPSHOT
+Fork branch: ForgeMTG-Adventure-Multiplayer
+Fork commit: c1139d5c1f7ceb3e17ce50718a9929e9134867e2
+Network port: TCP 36743
+Pack format: portable Windows

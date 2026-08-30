@@ -1,0 +1,13 @@
+This package contains GPL-3.0 software.
+
+Corresponding source for the multiplayer build:
+https://github.com/starstilanx/Forge-MTG-Adventure-Multiplayer
+Branch: ForgeMTG-Adventure-Multiplayer
+Commit: c1139d5c1f7ceb3e17ce50718a9929e9134867e2
+
+Original Forge project:
+https://github.com/Card-Forge/forge
+
+The Windows packaging scripts and exact build metadata are distributed in the
+same GitHub repository and release as this package.
+https://github.com/EnioSAF/forge-adventure-coop-windows

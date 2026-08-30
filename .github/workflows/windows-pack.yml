@@ -1,0 +1,95 @@
+name: Build Windows coop pack
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows-pack:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout packaging repository
+        uses: actions/checkout@v4
+
+      - name: Checkout tested multiplayer fork
+        uses: actions/checkout@v4
+        with:
+          repository: starstilanx/Forge-MTG-Adventure-Multiplayer
+          ref: c1139d5c1f7ceb3e17ce50718a9929e9134867e2
+          path: reference/Forge-MTG-Adventure-Multiplayer
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: reference/Forge-MTG-Adventure-Multiplayer/pom.xml
+
+      - name: Compile the multiplayer fork
+        shell: pwsh
+        working-directory: reference/Forge-MTG-Adventure-Multiplayer
+        run: mvn clean install -pl forge-gui-mobile-dev -am -DskipTests=true -Dcheckstyle.skip=true
+
+      - name: Download the official Forge 2.0.13 base
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path downloads -Force | Out-Null
+          Invoke-WebRequest `
+            -Uri 'https://github.com/Card-Forge/forge/releases/download/forge-2.0.13/forge-installer-2.0.13.tar.bz2' `
+            -OutFile 'downloads/forge-installer-2.0.13.tar.bz2'
+
+      - name: Create the portable Java runtime
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          $jlink = Join-Path $env:JAVA_HOME 'bin\jlink.exe'
+          & $jlink --add-modules ALL-MODULE-PATH --strip-debug --no-man-pages --no-header-files --compress=2 --output artifacts/runtime-java17
+          if ($LASTEXITCODE -ne 0) { throw "jlink failed: $LASTEXITCODE" }
+
+      - name: Build the portable ZIP
+        shell: pwsh
+        run: |
+          .\scripts\build-windows-pack.ps1 `
+            -SourceArchive '.\downloads\forge-installer-2.0.13.tar.bz2' `
+            -CoopJar '.\reference\Forge-MTG-Adventure-Multiplayer\forge-gui-mobile-dev\target\forge-gui-mobile-dev-2.0.13-SNAPSHOT-jar-with-dependencies.jar' `
+            -OutputRoot '.\artifacts\release' `
+            -JavaRuntimeDir '.\artifacts\runtime-java17'
+
+      - name: Validate pack contents
+        shell: pwsh
+        run: .\scripts\test-windows-pack.ps1 -OutputRoot '.\artifacts\action-test'
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Forge-Adventure-Coop-2.0.13-Windows
+          path: |
+            artifacts/release/Forge-Adventure-Coop-2.0.13-Windows.zip
+            artifacts/release/Forge-Adventure-Coop-2.0.13-Windows.zip.sha256
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Publish tagged GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $zip = 'artifacts/release/Forge-Adventure-Coop-2.0.13-Windows.zip'
+          $checksum = "$zip.sha256"
+          gh release view $env:GITHUB_REF_NAME *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:GITHUB_REF_NAME $zip $checksum --clobber
+          } else {
+            gh release create $env:GITHUB_REF_NAME $zip $checksum `
+              --title "Forge Adventure Coop 2.0.13" `
+              --notes "Pack Windows portable expérimental. Télécharge le ZIP, extrais-le, puis lance PLAY COOP.bat."
+          }
