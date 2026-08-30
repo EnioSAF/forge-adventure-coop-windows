@@ -16,17 +16,17 @@ jobs:
 
     steps:
       - name: Checkout packaging repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout tested multiplayer fork
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: starstilanx/Forge-MTG-Adventure-Multiplayer
           ref: c1139d5c1f7ceb3e17ce50718a9929e9134867e2
           path: reference/Forge-MTG-Adventure-Multiplayer
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -36,7 +36,7 @@ jobs:
       - name: Compile the multiplayer fork
         shell: pwsh
         working-directory: reference/Forge-MTG-Adventure-Multiplayer
-        run: mvn clean install -pl forge-gui-mobile-dev -am -DskipTests=true -Dcheckstyle.skip=true
+        run: mvn clean install -pl forge-gui-mobile-dev -am '-DskipTests=true' '-Dcheckstyle.skip=true'
 
       - name: Download the official Forge 2.0.13 base
         shell: pwsh

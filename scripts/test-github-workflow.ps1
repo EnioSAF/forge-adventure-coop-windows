@@ -15,6 +15,7 @@ $workflow = Get-Content -LiteralPath $workflowPath -Raw
 Assert-Contains $workflow 'c1139d5c1f7ceb3e17ce50718a9929e9134867e2' 'le fork doit être épinglé au commit testé'
 Assert-Contains $workflow 'forge-installer-2.0.13.tar.bz2' 'la base officielle 2.0.13 doit être téléchargée'
 Assert-Contains $workflow 'mvn' 'le fork doit être compilé par Maven'
+Assert-Contains $workflow "'-Dcheckstyle.skip=true'" 'les propriétés Maven doivent être protégées du parsing PowerShell'
 Assert-Contains $workflow 'jlink' 'Java portable doit être produit'
 Assert-Contains $workflow 'build-windows-pack.ps1' 'le même constructeur local doit être utilisé'
 Assert-Contains $workflow 'actions/upload-artifact@v4' 'le ZIP doit être publié comme artifact'
